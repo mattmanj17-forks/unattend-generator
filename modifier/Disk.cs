@@ -86,16 +86,11 @@ class DiskModifier(ModifierContext context) : Modifier(context)
     if (Configuration.PESettings is ICmdPESettings)
     {
       {
-        string comp = "Microsoft-Windows-PnpCustomizationsWinPE";
-        if (Configuration.Components.Any(c => c.Key.Component == comp))
+        string forbidden = Configuration.Components.Where(c => c.Key.Pass == Pass.windowsPE).Select(c => $"‘{c.Key.Component}’").JoinString(", ");
+        if (forbidden.Length != 0)
         {
-          throw new ConfigurationException($"Cannot create .cmd script when component ‘{comp}’ is used. Consider using a custom script and the ‘drvload.exe’ command.");
+          throw new ConfigurationException($"Cannot create .cmd script with custom components ({forbidden}) for the ‘windowsPE’ pass. To load drivers in the PE stage, add them to the ‘$WinPEDriver$’ folder or use a custom script to run the ‘drvload.exe’ command.");
         }
-      }
-
-      if (Configuration.Components.Any(c => c.Key.Pass == Pass.windowsPE))
-      {
-        throw new ConfigurationException("Cannot create .cmd script when custom component with pass ‘windowsPE’ is used.");
       }
 
       foreach (var node in Document.SelectNodesOrEmpty($"/u:unattend/u:settings[@pass='{Pass.windowsPE}']/*", NamespaceManager))
